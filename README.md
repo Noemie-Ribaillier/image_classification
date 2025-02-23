@@ -55,13 +55,12 @@ Steps:
 Both the Sequential and Functional APIs return a TF Keras model object. The only difference is how inputs are handled inside the object model.
 For any layer construction in Keras, you'll need to specify the input shape in advance. This is because in Keras, the shape of the weights is based on the shape of the inputs. The weights are only created when the model first sees some input data. 
 
-
-## Different layers used in Sequential & Functional mdoel (with TF - Keras)
+### Different layers
 These are the several layers we can use to build a Sequential or Functional API: 
 * Conv2D: creates a convolution kernel that is convolved with the layer input over a 2D spatial dimension (height and width)
 * MaxPool2D: downsamples the input along its spatial dimensions (height and width) by taking the maximum value over an input window (of size defined by pool_size (f, f)) for each channel of the input. The window is shifted by strides (s, s) along each dimension.
 * ReLU: computes the elementwise ReLU (Rectified Linear Unit)
-* Flatten: given a tensor, this function takes each example in the batch and flattens it into a 1D vector. If the tensor has the shape (batch_size,h,w,c), it returns a flattened tensor with shape (batch_size, k), with k=hxwxc 
+* Flatten: given a tensor, this function takes each example in the batch and flattens it into a 1D vector. If the tensor has the shape (batch_size,h,w,c), it returns a flattened tensor with shape (batch_size, k), with k=$htimes $wtimes $c 
 * Dense: given a flattened input, it returns the output computed using a fully connected layer. 
 
 Pool size and kernel size refer to the same thing in different objects: they refer to the shape of the window where the operation takes place (MaxPool2D vs Conv2D). 
