@@ -291,3 +291,4 @@ plt.show()
 # Get the prediction of the image (using the pre-trained model)
 prediction = pre_trained_model.predict(x)
 print(np.argmax(prediction)) # we get the index with highest probability
+
