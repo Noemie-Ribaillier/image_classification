@@ -2,7 +2,7 @@
 #####                                                                                               #####
 #####                      CONVOLUTIONAL NEURAL NETWORK - BINARY CLASSIFICATION                     #####
 #####                                    Created on: 2025-02-20                                     #####
-#####                                  Last updated on: 2025-02-23                                  #####
+#####                                  Last updated on: 2025-03-13                                  #####
 #####                                                                                               #####
 #########################################################################################################
 
@@ -19,12 +19,10 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import imread
-import scipy
 from PIL import Image
 import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.layers as tfl
-from tensorflow.python.framework import ops
 
 # Set up a seed for reproducible results
 tf.keras.utils.set_random_seed(1)  
@@ -39,17 +37,17 @@ from general_functions import *
 
 
 #########################################################################################################
-#####                              LOAD THE HAPPY DATASET + FIRST CHECK                             #####
+#####                              LOAD THE HAPPY DATASET + FIRST LOOK                              #####
 #########################################################################################################
 
-# Load X/Y train/test datasets
-X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_h5py_dataset(
+# Load X/Y train/test datasets and classes
+X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_h5_dataset(
     'datasets/train_happy.h5','datasets/test_happy.h5')
 
-# Print the classes (0 for non happy and 1 for happy)
+# Print the classes (0 for not happy and 1 for happy)
 print(classes)
 
-# Show an image of each class to have a first look 
+# Show a random image of each class to have a first look 
 index_not_happy = np.random.choice(np.where(Y_train_orig[0] == 0)[0])
 index_happy = np.random.choice(np.where(Y_train_orig[0] == 1)[0])
 
@@ -80,7 +78,7 @@ X_test = X_test_orig/255.
 Y_train = Y_train_orig.T
 Y_test = Y_test_orig.T
 
-# Get an idea of the shapes of train/test sets
+# Get the shapes of train/test sets
 print ("Number of training examples = " + str(X_train.shape[0]))
 print ("Number of test examples = " + str(X_test.shape[0]))
 print ("X_train shape: " + str(X_train.shape))
@@ -96,23 +94,23 @@ print ("Y_test shape: " + str(Y_test.shape))
 # Create the model with the following steps
 # ZEROPAD2D -> CONV2D -> BATCHNORM -> RELU -> MAXPOOL -> FLATTEN -> DENSE
 model = tf.keras.Sequential([
-    ## ZeroPadding2D with padding 3, input shape of 64 x 64 x 3
-    tfl.ZeroPadding2D(padding=3,input_shape=(64,64,3)),
-    ## Conv2D with 32 7x7 filters and stride of 1
-    tfl.Conv2D(filters=32,kernel_size=(7,7),strides=1),
-    ## BatchNormalization for axis 3
+    # ZeroPadding2D with padding 3, input shape of 64 x 64 x 3
+    tfl.ZeroPadding2D(padding=3, input_shape=(64,64,3)),
+    # Conv2D with 32 7x7 filters and stride of 1
+    tfl.Conv2D(filters=32, kernel_size=(7,7), strides=1),
+    # BatchNormalization for axis 3 (ie the number of channels, also called the depth of the feature map)
     tfl.BatchNormalization(axis=3),
-    ## ReLU
+    # ReLU
     tfl.ReLU(),
-    ## Max Pooling 2D with default parameters
+    # Max Pooling 2D with default parameters
     tfl.MaxPool2D(),
-    ## Flatten layer
+    # Flatten layer
     tfl.Flatten(),
-    ## Dense layer with 1 unit for output & 'sigmoid' activation
-    tfl.Dense(units=1,activation='sigmoid')
+    # Dense layer with 1 unit for output & 'sigmoid' activation (since binary classification)
+    tfl.Dense(units=1, activation='sigmoid')
 ])
 
-# Compile the model with Adam optimizer, accuracy metric and binary crossentropy loss
+# Compile the model with Adam optimizer, accuracy metric and binary crossentropy loss (classification pb)
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # Check the model's parameters (the layers type, the outputs shape, and the number of parameters for each layer)
@@ -125,8 +123,8 @@ model.summary()
 
 # Train the model
 model.fit(X_train, Y_train, epochs=10, batch_size=16)
-# accuracy: 0.9825 - loss: 0.0533 
+# accuracy: 0.98 - loss: 0.05 
 
 # Evaluate the model on the test set (accuracy metric + binary crossentropy loss, as specified in the compile step)
 model.evaluate(X_test, Y_test)
-# accuracy:  0.8902 - loss: 0.2202 
+# accuracy:  0.89 - loss: 0.21 

@@ -1,14 +1,15 @@
-# Convolutional Neural Network
-In this repository, we are going to carry several image classification projects:
+# Image classification
+In this repository, we are going to do several image classification projects:
 * a binary classification problem (using a TF Keras Sequential API) 
 * a multiclass classification problem (using the TF Keras Functional API)
 * a multiclass classification problem (using the ResNet50 model)
-For this projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allows for more simplified and optimized model creation and training)
+For these projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allows for more simplified and optimized model creation and training).
 
 
 ## Binary classification (happy vs not happy, using TF Keras Sequential API)
+
 ### Project description
-In this project, we aim at classifying an image into 2 classes: happy or not happy. To do so, we will build a CNN model that determines whether the people in the images are smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
+In this project, we aim at classifying an image into 2 classes: happy or not happy. To do so, we will build a CNN model that determines whether the people in the image is smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
 
 ### Datasets
 We use the Happy House dataset which contains images of peoples' faces. The training set contains 600 images and the test set contains 150 images. Images are 64x64 pixels in RGB format (so 3 channels).
@@ -21,8 +22,20 @@ It's simple and straightforward (but only appropriate for simple models with lay
 ### Script description, step by step
 1. We load the libraries that we will need for the project, we load the general functions built in another script and we set up a seed to get reproducible results.
 2. We load the training and test sets and we take a look at the classes (0-1 for not happy-happy) and 2 pictures (1 for each class)
-3. We prepare a bit the data (normalization of the X data [to get faster convergence of the model] and transpose to have the right shape of Y data) and we check the dimensions of each set.
-4. We create the sequential model and compile it
+3. We prepare a bit the data (normalization of the X data and transpose to have the right shape of Y data) and we check the dimensions of each set. The normalization of the X has several goals:
+* Get faster and more stable convergence of the model
+* Get consistancy among datasets (if pixel ranges are not the same among images, normalization solve this issue, which makes it easier for models to generalize across datasets)
+* Prevent dominance of features with larger magnitudes (normalization ensures that no single feature dominates during training)
+* Form of regularization (because it keeps input values in a controlled range), reducing the chances of overfitting in some cases, especially when combined with techniques like batch normalization.
+4. We create the sequential model and compile it. For this model we use the following layers:
+* ZeroPadding2D: adds padding around the input image to prevent the reduction of spatial dimensions after convolution (and pooling operations). This helps maintain the spatial dimensions and can also help prevent edge information from being lost during convolution.
+* Conv2D: applies a convolution operation to the input data. Convolution layers are used to automatically learn spatial features from the input image, such as edges, textures, and patterns.
+ZeroPadding2D and Conv2D could also be summed up as Conv2D with parameter padding='same'.
+* BatchNormalization: normalizes the output of the previous layer to improve model training by reducing internal covariate shift. It helps speed up training and may lead to better performance by ensuring that the activations maintain a consistent distribution throughout training.
+* ReLU activation function: introduces non-linearity into the model and helps the network learn complex patterns.
+* Max Pooling 2D: used to reduce the spatial dimensions (height and width) of the input, effectively downsampling the feature maps. This reduces the computational load and the number of parameters.
+* Flatten: flattens the multi-dimensional input (eg, the 2D feature maps from the convolution layers) into a 1D vector. This is necessary because the next layer (the Dense layer) expects a 1D vector as input.
+* Dense (with sigmoid activation function): used to make predictions. It uses a fully connected (dense) layer with a sigmoid activation function to output a probability for binary classification.
 5. We train and evaluate the model
 
 
