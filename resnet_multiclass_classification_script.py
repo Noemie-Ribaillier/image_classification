@@ -242,7 +242,7 @@ print ("X_test shape: " + str(X_test.shape))
 print ("Y_test shape: " + str(Y_test.shape))
 
 # Train the model
-model.fit(X_train, Y_train, epochs = 10, batch_size = 32)
+model.fit(X_train, Y_train, epochs = 20, batch_size = 32)
 
 # Evaluate the model on test set
 preds = model.evaluate(X_test, Y_test)
