@@ -2,12 +2,12 @@
 #####                                                                                               #####
 #####                    CONVOLUTIONAL NEURAL NETWORK - MULTICLASS CLASSIFICATION                   #####
 #####                                    Created on: 2025-02-20                                     #####
-#####                                  Last updated on: 2025-02-23                                  #####
+#####                                  Last updated on: 2025-03-14                                  #####
 #####                                                                                               #####
 #########################################################################################################
 
 #########################################################################################################
-#####                                  PACKAGES + GENERAL FUNCTIONS                                 #####
+#####                                  PACKAGES & GENERAL FUNCTIONS                                 #####
 #########################################################################################################
 
 # Clear the whole environment 
@@ -19,12 +19,10 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import imread
-import scipy
 from PIL import Image
 import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.layers as tfl
-from tensorflow.python.framework import ops
 
 # Set up a seed for reproducible results
 tf.keras.utils.set_random_seed(21)  
@@ -39,17 +37,17 @@ from general_functions import *
 
 
 #########################################################################################################
-#####                              LOAD THE SIGNS DATASET + FIRST CHECK                             #####
+#####                              LOAD THE SIGNS DATASET & FIRST LOOK                              #####
 #########################################################################################################
 
-# Load X/Y train/test datasets
-X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_h5py_dataset(
+# Load X/Y train/test datasets and the classes
+X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_h5_dataset(
     'datasets/train_signs.h5', 'datasets/test_signs.h5')
 
 # Print the classes (from 0 to 5)
 print(classes)
 
-# Show an image of each class to have a first look (0-5)
+# Plot a random image of each class to have a first look (0-5)
 index_0 = np.random.choice(np.where(Y_train_orig[0] == 0)[0])
 index_1 = np.random.choice(np.where(Y_train_orig[0] == 1)[0])
 index_2 = np.random.choice(np.where(Y_train_orig[0] == 2)[0])
@@ -92,13 +90,13 @@ plt.show()
 #####                                        DATA PREPARATION                                       #####
 #########################################################################################################
 
-# Normalize the image data
+# Normalize the image data (for faster model convergence)
 X_train = X_train_orig/255.
 X_test = X_test_orig/255.
 
-# One-hot encode Y train and test and reshape
-Y_train = convert_to_one_hot(Y_train_orig, 6).T
-Y_test = convert_to_one_hot(Y_test_orig, 6).T
+# Transform Y train and test to one-hot encoding (to use softmax later)
+Y_train = convert_to_one_hot(Y_train_orig, 6)
+Y_test = convert_to_one_hot(Y_test_orig, 6)
 
 # Get an idea of the shape of X/Y train/test datasets
 print ("Number of training examples = " + str(X_train.shape[0]))
@@ -114,40 +112,43 @@ print ("Y_test shape: " + str(Y_test.shape))
 #########################################################################################################
 
 # Implement the cnn_model function to build the model with the following layers:
-# CONV2D -> RELU -> MAXPOOL -> CONV2D -> RELU -> MAXPOOL -> FLATTEN -> DENSE. 
+# CONV2D -> RELU -> MAXPOOL -> CONV2D -> RELU -> MAXPOOL -> FLATTEN -> DENSE
 def cnn_model(input_shape):
     """
-    Implements the CNN model: 
+    Implement the CNN model with the following layers: 
     CONV2D -> RELU -> MAXPOOL -> CONV2D -> RELU -> MAXPOOL -> FLATTEN -> DENSE
 
     Arguments:
-    input_img -- input dataset, of shape (input_shape)
+    input_img -- input dataset, tuple of shape (input_shape)
 
     Returns:
     model -- TF Keras model (object containing the information for the entire training process) 
     """
-
+    # Set up the input
     input_img = tf.keras.Input(shape=input_shape)
     
     # CONV2D: 8 filters 4x4, stride of 1, padding 'SAME'
-    Z1 = tfl.Conv2D(filters=8,kernel_size=(4,4),strides=1,padding='same')(input_img)
+    Z1 = tfl.Conv2D(filters=8, kernel_size=(4,4), strides=1, padding='same')(input_img)
     # RELU
     A1 = tfl.ReLU()(Z1)
     # MAXPOOL: window 8x8, stride 8, padding 'SAME'
-    P1 = tfl.MaxPool2D(pool_size=(8,8),strides=8,padding='same')(A1)
+    P1 = tfl.MaxPool2D(pool_size=(8,8), strides=8, padding='same')(A1)
     # CONV2D: 16 filters 2x2, stride 1, padding 'SAME'
-    Z2 = tfl.Conv2D(filters=16,kernel_size=(2,2),strides=1,padding='same')(P1)
+    Z2 = tfl.Conv2D(filters=16, kernel_size=(2,2), strides=1, padding='same')(P1)
     # RELU
     A2 = tfl.ReLU()(Z2)
     # MAXPOOL: window 4x4, stride 4, padding 'SAME'
-    P2 = tfl.MaxPool2D(pool_size=(4,4),strides=4,padding='same')(A2)
+    P2 = tfl.MaxPool2D(pool_size=(4,4), strides=4, padding='same')(A2)
     # FLATTEN
     F =  tfl.Flatten()(P2)
     # DENSE: 6 neurons in output layer and softmax activation function (because multiclass classification)
-    outputs = tfl.Dense(units=6,activation='softmax')(F)
+    outputs = tfl.Dense(units=6, activation='softmax')(F)
 
+    # Set up the model
     model = tf.keras.Model(inputs=input_img, outputs=outputs)
+
     return model
+
 
 # Create the model using the inputs we have
 model = cnn_model((64, 64, 3))
@@ -163,10 +164,10 @@ model.summary()
 #####                                        TRAIN THE MODEL                                        #####
 #########################################################################################################
 
-# Transform the train dataset in mini-batches
+# Transform the train dataset into mini-batches (for computational efficiency, memory usage, and model generalization)
 train_dataset = tf.data.Dataset.from_tensor_slices((X_train, Y_train)).batch(64)
 
-# Transform the test dataset in mini-batches
+# Transform the test dataset into mini-batches
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, Y_test)).batch(64)
 
 # Train the model
@@ -177,7 +178,7 @@ history = model.fit(train_dataset, epochs=100, validation_data=test_dataset)
 #####                                       EVALUATE THE MODEL                                      #####
 #########################################################################################################
 
-# The history provides a record of all the loss and metric values in memory
+# The history provides a record of the accuracy/loss for train/test sets per epoch
 history.history
 
 # Determine the accuracy and loss of train/test sets over time
@@ -187,9 +188,10 @@ df_loss.rename(columns={'loss':'train','val_loss':'validation'},inplace=True)
 df_acc= df_loss_acc[['accuracy','val_accuracy']]
 df_acc.rename(columns={'accuracy':'train','val_accuracy':'validation'},inplace=True)
 
+
 # Visualize the accuracy and loss of train/test sets over time
-# Create a figure with 2 subplots (1 row, 2 columns)
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+# Create a figure with 2 subplots (2 rows, 1 column)
+fig, axes = plt.subplots(2, 1, figsize=(10, 5))
 # Display the accuracy with respect to epoches
 axes[0].plot(df_acc)
 axes[0].set_title('Model accuracy')
