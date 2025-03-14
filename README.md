@@ -3,13 +3,13 @@ In this repository, we are going to do several image classification projects:
 * a binary classification problem (using a TF Keras Sequential API) 
 * a multiclass classification problem (using the TF Keras Functional API)
 * a multiclass classification problem (using the ResNet50 model)
-For these projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allows for more simplified and optimized model creation and training).
+For these projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allow for more simplified and optimized model creation and training).
 
  
 ## Binary classification (happy vs not happy, using TF Keras Sequential API)
 
 ### Project description
-In this project, we aim at classifying an image into 2 classes: happy or not happy. To do so, we will build a CNN model that determines whether the people in the image is smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
+In this project, we aim at classifying an image into 2 classes: happy (value 1) or not happy (value 0). To do so, we will build a CNN model that determines whether the person in the image is smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
 
 ### Datasets
 We use the Happy House dataset which contains images of peoples' faces. The training set contains 600 images and the test set contains 150 images. Images are 64x64 pixels in RGB format (so 3 channels).
