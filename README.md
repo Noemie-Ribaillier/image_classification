@@ -64,9 +64,9 @@ Steps:
 * normalization of the X data: to get faster and more stable convergence of the model, get consistancy among datasets, prevent dominance of features with larger magnitudes and used as a form of regularization 
 * transform Y data to one-hot encoding: to use softmax as final activation function (to get the probability of each class)
 4. We create the model and compile it. For this model, we use the following layers:
-* Conv2D: to learn spatial features from the input image, such as edges, textures, and patterns.  By using same padding, we ensure that the features at the edges of the image are preserved, so the model doesn't lose important information from the boundaries.
+* Conv2D: to learn spatial features from the input image, such as edges, textures, and patterns. By using same padding, we ensure that the features at the edges of the image are preserved, so the model doesn't lose important information from the boundaries.
 * ReLU activation function: to introduce non-linearity into the model and helps the network learn complex patterns.
-* MaxPool: to retain the most important features, here we use same padding, meaning the spatial dimensions (height and width) are not reduced.
+* MaxPool: to retain the most important features, here we use same padding (to keep as much edges information as possible). The spatial dimensions (height and width) are reduced since the number of strides is different than 1 (typically spatial dimensions are divided by strides number).
 * then we repeat it: the 1st round of Conv2D, ReLU, MaxPool extracts low level features (like edges, textures, and simple shapes), then the 2nd round extracts more complex features (like patterns, corners, and parts of objects). Additionally, the number of filters increases, allowing the network to learn richer and more abstract features as we go deeper.
 * Flatten: flattens the multi-dimensional input (eg, the 2D feature maps from the convolution layers) into a 1D vector. This is necessary because the next layer (the Dense layer) expects a 1D vector as input.
 * Dense (with softmax activation function and 6 units): used to make predictions. The softmax activation ensures that the output values sum to 1, representing the probabilities of each of the 6 classes in a multiclass classification task.
@@ -88,7 +88,7 @@ For any layer construction in Keras, we'll need to specify the input shape in ad
 ### Different layers
 These are the several layers we can use to build a Sequential or Functional API: 
 * Conv2D: creates a convolution kernel that is convolved with the layer input over a 2D spatial dimension (height and width). It performs a sliding window operation to capture local spatial features (such as edges, textures, and patterns) from the input image. The result is a set of feature maps.
-* MaxPool2D: take the maximum value over an input window (of size defined by pool_size (f, f)) for each channel of the input. The window is shifted by strides (s, s) along each dimension. It reduces the spatial size of the input, helping to control overfitting and reduce computational complexity. Same padding only ensures 
+* MaxPool2D: take the maximum value over an input window (of size defined by pool_size (f, f)) for each channel of the input. The window is shifted by strides (s, s) along each dimension. It reduces the spatial size of the input, helping to control overfitting and reduce computational complexity. Same padding with strides=1 ensures that spatial dimensions are the same between input and output. 
 * ReLU: computes the elementwise ReLU (Rectified Linear Unit), it introduces non-linearity to the network, allowing it to learn more complex patterns.
 * Flatten: given a tensor, this function takes each example in the batch and flattens it into a 1D vector. If the tensor has the shape (batch_size, h, w, c), it returns a flattened tensor with shape (batch_size, k), with k = h * w * c
 * Dense: given a flattened input, it returns the output computed using a fully connected layer. 
