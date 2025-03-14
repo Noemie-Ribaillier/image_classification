@@ -167,7 +167,7 @@ model.summary()
 # Transform the train dataset into mini-batches (for computational efficiency, memory usage, and model generalization)
 train_dataset = tf.data.Dataset.from_tensor_slices((X_train, Y_train)).batch(64)
 
-# Transform the test dataset into mini-batches
+# Transform the test dataset into mini-batches (to avoid memory issues)
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, Y_test)).batch(64)
 
 # Train the model
