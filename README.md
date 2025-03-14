@@ -5,7 +5,7 @@ In this repository, we are going to do several image classification projects:
 * a multiclass classification problem (using the ResNet50 model)
 For these projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allows for more simplified and optimized model creation and training).
 
-
+ 
 ## Binary classification (happy vs not happy, using TF Keras Sequential API)
 
 ### Project description
