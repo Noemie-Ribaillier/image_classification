@@ -2,7 +2,7 @@
 #####                                                                                                    #####
 #####                          MULTICLASS CLASSIFICATION USING RESIDUALS NETWORK                         #####
 #####                                       Created on: 2025-02-21                                       #####
-#####                                       Updated on: 2025-03-14                                       #####
+#####                                       Updated on: 2025-03-15                                       #####
 #####                                                                                                    #####
 ##############################################################################################################
 
@@ -37,19 +37,18 @@ from general_functions import *
 #####                                         THE IDENTITY BLOCK                                         #####
 ##############################################################################################################
 
-# The identity block is one of the 2 blocks used in ResNets. 
+# We create the function identity_block to implement the ResNet identity block (one of the 2 blocks used in ResNets).
 # It corresponds to the case where the input activation (a[l]) has the same dimension as the output activation (a[l+2]).
-
-# We create the function identity_block to implement the ResNet identity block
 def identity_block(X, f, filters, initializer=random_uniform):
     """
-    Implementation of the identity block
+    Implementation of the identity block:
+    Main path gets the following layers: Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm
     
     Arguments:
     X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)
-    f -- integer, specifying the shape of the middle CONV's window for the main path
-    filters -- python list of integers, defining the number of filters in the CONV layers of the main path
-    initializer -- to set up the initial weights of a layer. Equals to random uniform initializer
+    f -- integer, specifying the shape of the middle Conv's window for the main path
+    filters -- python list of integers, defining the number of filters in the Conv layers of the main path
+    initializer -- to set up the initial weights of a layer. Equals to random uniform initializer (to get small weights)
     
     Returns:
     X -- output of the identity block, tensor of shape (m, n_H, n_W, n_C)
@@ -86,21 +85,20 @@ def identity_block(X, f, filters, initializer=random_uniform):
 #####                                      THE CONVOLUTIONAL BLOCK                                       #####
 ##############################################################################################################
 
-# The ResNet convolutional block is the second typical block type. 
-# The difference with the identity block is that there is a CONV2D layer in the shortcut path because it's used when input and output don't have the same dimensions
-
-# Create the function implementing the convolutional block
+# Create the function implementing the convolutional block (the second typical block type)
+# The difference with the identity block is that there is a Conv2D layer in the shortcut path because it's used when input and output don't have the same dimensions
 def convolutional_block(X, f, filters, s = 2, initializer=glorot_uniform):
     """
     Implementation of the convolutional block
+    Main path: Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm
+    Shortcut path: Conv2D -> BatchNorm
     
     Arguments:
     X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)
-    f -- integer, specifying the shape of the middle CONV's window for the main path
-    filters -- python list of integers, defining the number of filters in the CONV layers of the main path
-    s -- Integer, specifying the stride to be used
-    initializer -- to set up the initial weights of a layer. Equals to Glorot uniform initializer, 
-                   also called Xavier uniform initializer.
+    f -- integer, specifying the shape of the middle Conv's window for the main path
+    filters -- python list of integers, defining the number of filters in the Conv layers of the main path
+    s -- integer, specifying the stride to be used
+    initializer -- to set up the initial weights of a layer (Glorot uniform initializer, also called Xavier uniform initializer)
     
     Returns:
     X -- output of the convolutional block, tensor of shape (m, n_H, n_W, n_C)
@@ -126,7 +124,7 @@ def convolutional_block(X, f, filters, s = 2, initializer=glorot_uniform):
     X = Conv2D(filters = F3, kernel_size = 1, strides = (1,1), padding='valid', kernel_initializer = initializer(seed=0))(X)
     X = BatchNormalization(axis = 3)(X)
     
-    # Shortcut path
+    # Shortcut path: Conv2D -> BN
     X_shortcut = Conv2D(filters = F3, kernel_size = 1, strides = (s,s), padding='valid', kernel_initializer = initializer(seed=0))(X_shortcut)
     X_shortcut = BatchNormalization(axis = 3)(X_shortcut)
 
@@ -229,7 +227,7 @@ X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_h5_dataset(
 X_train = X_train_orig / 255.
 X_test = X_test_orig / 255.
 
-# Convert training and test Y to one hot matrices (to use softmax later)
+# Convert training and test Y to one hot array (to use softmax later)
 Y_train = convert_to_one_hot(Y_train_orig, 6)
 Y_test = convert_to_one_hot(Y_test_orig, 6)
 
@@ -254,7 +252,7 @@ print ("Test Accuracy = " + str(preds[1])+" & Loss = " + str(preds[0]))
 ##############################################################################################################
 
 # Load a pre-trained model (trained on the SIGNS dataset)
-pre_trained_model = load_model('resnet50.h5')
+pre_trained_model = load_model('models/resnet50.h5')
 
 # Get a summary of the pre-trained model
 pre_trained_model.summary()
