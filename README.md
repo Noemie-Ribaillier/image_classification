@@ -7,7 +7,6 @@ For these projects we use the framework Tensorflow - Keras (it has pre-defined l
 
  
 ## Binary classification (happy vs not happy, using TF Keras Sequential API)
-
 ### Project description
 In this project, we aim at classifying an image into 2 classes: happy (value 1) or not happy (value 0). To do so, we will build a CNN model that determines whether the person in the image is smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
 
@@ -40,7 +39,6 @@ ZeroPadding2D and Conv2D could also be summed up as Conv2D with parameter paddin
 
 
 ## Multiclass classification (sign language digits, using the TF Keras Functional API)
-
 ### Project description
 In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5 (according to the number displayed by the hand). To do so we will build a CNN model that determines the number showed by the hand in the image.
 The business use could be: being able to recognize language signs (then we would need to extend that project to all language signs).
@@ -99,7 +97,6 @@ Before creating the model we need to define the output (for example Dense layer 
 
 
 ## Multiclass classification (sign language digits using ResNet50 model)
-
 ### Project description
 In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5 (according to the number displayed by the hand). To do so, we will build a ResNet50 model that determines the number showed by the hand in the image.
 The business use could be: being able to recognize language signs (then we would need to extend that project to all language signs).
@@ -108,8 +105,12 @@ The business use could be: being able to recognize language signs (then we would
 We use the Signs dataset which contains images of hands showing a number (from 0 to 5). The training set contains 1080 images and the test set contains 120 images. Images are 64x64 pixels in RGB format (so 3 channels).
 
 ### Model used
-We use the ResNet50 model for this project. ResNet model uses 2 specific blocks: identity block and convolutional block.
-The skip connection (used in both blocks) helps address the vanishing gradient problem (that we can have with very deep plain networks) by enabling gradients to flow more directly through the network, allowing for more effective training of very deep networks. Indeed, with skip connections, gradients can directly flow through the shortcut path, bypassing some layers. This makes the gradients less likely to shrink as they pass through many layers, thus mitigating the vanishing gradient problem.
+We use the ResNet50 model for this project. 
+
+The main benefit of a very deep network is that it can learn features at many different levels of abstraction, from edges (at the shallower layers, closer to the input) to very complex features (at the deeper layers, closer to the output). However, deep network face the vanishing gradients problem: gradient signal that goes to zero quickly, thus making gradient descent prohibitively slow. During gradient descent, as we backpropagate from the final layer back to the first layer, we are multiplying by the weight matrix on each step, and thus the gradient can decrease exponentially quickly to zero (or, in rare cases, grow exponentially quickly and "explode" from gaining very large values). We are going to build a deep convolutional network using Residual Networks (ResNets) with 50 layers. 
+
+ResNet model uses 2 specific blocks: identity block and convolutional block.
+The skip connection (used in both blocks) helps address the vanishing gradient problem by enabling gradients to flow more directly through the network, allowing for more effective training of very deep networks. Indeed, with skip connections, gradients can directly flow through the shortcut path, bypassing some layers. This makes the gradients less likely to shrink as they pass through many layers, thus mitigating the vanishing gradient problem.
 
 ### Identity block
 The goal of the identity block is to keep the input unchanged (identity) and adds it to the output of the convolutional layers (residual learning). It learns residuals, meaning it tries to model the difference between the input and the desired output, instead of learning the entire output from scratch.
@@ -122,7 +123,6 @@ The identity block uses a shortcut path. Each path gets the following layers:
 * the shortcut path is "empty" since dimensions are exactly the same between input and output
 BatchNorm step is added to speed up the training.
 
-
 ### Convolutional block
 The convolutional block applies transformations that can change the spatial dimensions (height, width) or number of channels. It typically learns larger transformations (which can be critical for capturing more abstract representations of the data) by:
 * downsampling (ie spatial size is reduced): using convolutions with stride different than 1 to reduce the spatial resolution of the feature maps while trying to retain relevant features
@@ -132,7 +132,6 @@ The convolutional block uses a shortcut path. Each path gets the following layer
 * the main path: Conv2D -> BN -> ReLU -> Conv2D -> BN -> ReLU -> Conv2D -> BN
 * the shortcut path: Conv2D -> BN. The Conv2D layer in the shortcut path is to apply a (learned) linear function used to resize the input X to a different dimension so that the dimensions match up in the final addition needed to add the shortcut value back to the main path. 
 BatchNorm step is added to speed up training.
-
 
 ### Details of the ResNet50
 These are the steps used to build the ResNet50 model:
@@ -158,7 +157,6 @@ These are the steps used to build the ResNet50 model:
 * Flatten layer (no hyperparameters)
 * Fully Connected (Dense) layer: reduces the input to the number of classes using a softmax activation.
 
-
 ### Script description, step by step
 1. We load the libraries that we will need for the poject, we load the general functions built in another script and we set up a seed to get reproducible results
 2. We build the identity block function
@@ -166,3 +164,7 @@ These are the steps used to build the ResNet50 model:
 4. We build the ResNet50 model using the identity block and the convolution block
 5. We train the model and evaluate on test set
 6. We us a pre-trained model and we test it on a new image
+
+
+## Comparison of the models (used for multiclass classification)
+We find better results with ResNet50 model (especially the pre-trained one) than with the standard CNN for multiclass classification. It's because the ResNet50 model is deeper (but handle the vanishing gradient) and traiend on more images/epoches.
