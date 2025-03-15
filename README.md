@@ -3,7 +3,7 @@ In this repository, we are going to do several image classification projects:
 * a binary classification problem (using a TF Keras Sequential API) 
 * a multiclass classification problem (using the TF Keras Functional API)
 * a multiclass classification problem (using the ResNet50 model)
-For these projects we mainly use the framework Tensorflow - Keras (it has pre-defined layers that allow for more simplified and optimized model creation and training).
+For these projects we use the framework Tensorflow - Keras (it has pre-defined layers that allow for more simplified and optimized model creation and training).
 
  
 ## Binary classification (happy vs not happy, using TF Keras Sequential API)
@@ -11,7 +11,7 @@ For these projects we mainly use the framework Tensorflow - Keras (it has pre-de
 ### Project description
 In this project, we aim at classifying an image into 2 classes: happy (value 1) or not happy (value 0). To do so, we will build a CNN model that determines whether the person in the image is smiling or not. The business use could be: people can only enter a house/shop if they are smiling.
 
-### Datasets
+### Dataset
 We use the Happy House dataset which contains images of peoples' faces. The training set contains 600 images and the test set contains 150 images. Images are 64x64 pixels in RGB format (so 3 channels).
 
 ### Model used
@@ -42,10 +42,10 @@ ZeroPadding2D and Conv2D could also be summed up as Conv2D with parameter paddin
 ## Multiclass classification (sign language digits, using the TF Keras Functional API)
 
 ### Project description
-In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5 (according to the number displayed by the hand). To do so we will build a CNN model that determines the number showed by the the hand in the image.
+In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5 (according to the number displayed by the hand). To do so we will build a CNN model that determines the number showed by the hand in the image.
 The business use could be: being able to recognize language signs (then we would need to extend that project to all language signs).
 
-### Datasets
+### Dataset
 We use the Signs dataset which contains images of hands showing a number (from 0 to 5). The training set contains 1080 images and the test set contains 120 images. Images are 64x64 pixels in RGB format (so 3 channels).
 
 ### Model used
@@ -99,53 +99,68 @@ Before creating the model we need to define the output (for example Dense layer 
 
 
 ## Multiclass classification (sign language digits using ResNet50 model)
-### Project description
-In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5. To do so we will build a ResNet50 model that determines the number showed by the the hand in the images.
 
-### Datasets
+### Project description
+In this project, we aim at classifying an image into 6 classes: 0, 1, 2, 3, 4 or 5 (according to the number displayed by the hand). To do so, we will build a ResNet50 model that determines the number showed by the hand in the image.
+The business use could be: being able to recognize language signs (then we would need to extend that project to all language signs).
+
+### Dataset
 We use the Signs dataset which contains images of hands showing a number (from 0 to 5). The training set contains 1080 images and the test set contains 120 images. Images are 64x64 pixels in RGB format (so 3 channels).
 
 ### Model used
-ResNet model uses 2 specific blocks: identity block and convolutional block.
-The skip connection (used in both blocks) help address the Vanishing Gradient problem (that we can have with very deep "plain" networks).
+We use the ResNet50 model for this project. ResNet model uses 2 specific blocks: identity block and convolutional block.
+The skip connection (used in both blocks) helps address the vanishing gradient problem (that we can have with very deep plain networks) by enabling gradients to flow more directly through the network, allowing for more effective training of very deep networks. Indeed, with skip connections, gradients can directly flow through the shortcut path, bypassing some layers. This makes the gradients less likely to shrink as they pass through many layers, thus mitigating the vanishing gradient problem.
 
 ### Identity block
-The identity block uses a shortcut path. It's used when the input activation has the same dimensions than the output activation.
-The main path gets the following layers: Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm 
+The goal of the identity block is to keep the input unchanged (identity) and adds it to the output of the convolutional layers (residual learning). It learns residuals, meaning it tries to model the difference between the input and the desired output, instead of learning the entire output from scratch.
+Since the input and output dimensions are the same, the identity block typically learns small transformations (if any). It can learn to refine features, but it doesn't drastically alter the input's structure or size.
+
+The identity block is used when the input activation has the same dimensions than the output activation. So there is no change in spatial dimensions (height, width) or number of channels between input and output. The input is directly added to the output of the convolutional layers (skip connection). 
+
+The identity block uses a shortcut path. Each path gets the following layers:
+* the main path: Conv2D -> BN -> ReLu -> Conv2D -> BN -> ReLu -> Conv2D -> BN
+* the shortcut path is "empty" since dimensions are exactly the same between input and output
 BatchNorm step is added to speed up the training.
 
+
 ### Convolutional block
-The convolution block uses a shortcut path. 
-The main path gets the following layers: Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm.
-The shortcut path gets the following layers: COnv2D -> BatchNorm. 
+The convolutional block applies transformations that can change the spatial dimensions (height, width) or number of channels. It typically learns larger transformations (which can be critical for capturing more abstract representations of the data) by:
+* downsampling (ie spatial size is reduced): using convolutions with stride different than 1 to reduce the spatial resolution of the feature maps while trying to retain relevant features
+* increasing the depth (ie number of channels): using convolutions with more filters to capture more complex features
+
+The convolutional block uses a shortcut path. Each path gets the following layers:
+* the main path: Conv2D -> BN -> ReLU -> Conv2D -> BN -> ReLU -> Conv2D -> BN
+* the shortcut path: Conv2D -> BN. The Conv2D layer in the shortcut path is to apply a (learned) linear function used to resize the input X to a different dimension so that the dimensions match up in the final addition needed to add the shortcut value back to the main path. 
 BatchNorm step is added to speed up training.
-The Conv2D layer in the shortcut path is to apply a (learned) linear function used to resize the input x to a different dimension so that the dimensions match up in the final addition needed to add the shortcut value back to the main path. 
+
 
 ### Details of the ResNet50
-These are the steps used in ResNet50 model:
+These are the steps used to build the ResNet50 model:
 * Zero-padding with (3,3)
 * Stage 1:
     * Conv2D with 64 filters, (7,7) kernel and (2,2) stride 
     * BatchNorm (applied to the channels axis of the input)
+    * ReLU
     * MaxPool, (3,3) window and (2,2) stride
 * Stage 2:
-    * convolutional block with 3 sets of filters of size [64,64,256], (3,3) kernel and (1,1) stride 
-    * 2 identity blocks with 3 sets  of filters of size [64,64,256], (3,3) kernel
+    * Convolutional block with 3 filters of size [64,64,256], (3,3) kernel and (1,1) stride 
+    * 2 identity blocks with 3 filters of size [64,64,256], (3,3) kernel of middle Conv2D for the main path
 * Stage 3:
-    * convolutional block with 3 sets of filters of size [128,128,512], (3,3) kernel and (2,2) stride 
-    * 3 identity blocks with 3 sets  of filters of size [128,128,512], (3,3) kernel
+    * Convolutional block with 3 filters of size [128,128,512], (3,3) kernel and (2,2) stride 
+    * 3 identity blocks with 3 filters of size [128,128,512], (3,3) kernel of middle Conv2D for the main path
 * Stage 4:
-    * convolutional block with 3 sets of filters of size [256,256,1024], (3,3) kernel and (2,2) stride 
-    * 5 identity blocks with 3 sets  of filters of size [256,256,1024], (3,3) kernel
+    * Convolutional block with 3 filters of size [256,256,1024], (3,3) kernel and (2,2) stride 
+    * 5 identity blocks with 3 filters of size [256,256,1024], (3,3) kernel of middle Conv2D for the main path
 * Stage 5:
-    * convolutional block with 3 sets of filters of size [512,512,2048], (3,3) kernel and (2,2) stride 
-    * 3 identity blocks with 3 sets  of filters of size [512,512,2048], (3,3) kernel
+    * Convolutional block with 3 filters of size [512,512,2048], (3,3) kernel and (2,2) stride 
+    * 2 identity blocks with 3 filters of size [512,512,2048], (3,3) kernel of middle Conv2D for the main path
 * AveragePool2D with (2,2) pool size
 * Flatten layer (no hyperparameters)
-* Fully Connected (Dense) layer: reduces its input to the number of classes using a softmax activation.
+* Fully Connected (Dense) layer: reduces the input to the number of classes using a softmax activation.
+
 
 ### Script description, step by step
-1. We load the libraries that we will need for the project, we load the general functions built in another script and we set up a seed to get reproducible results.
+1. We load the libraries that we will need for the poject, we load the general functions built in another script and we set up a seed to get reproducible results
 2. We build the identity block function
 3. We build the convolution block function
 4. We build the ResNet50 model using the identity block and the convolution block
