@@ -43,7 +43,8 @@ def identity_block(X, f, filters, initializer=random_uniform):
     """
     Implementation of the identity block:
     Main path gets the following layers: Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm -> ReLu -> Conv2D -> BatchNorm
-    
+    We use bottleneck residual block structure for efficiency purpose
+
     Arguments:
     X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)
     f -- integer, specifying the shape of the middle Conv's window for the main path
@@ -59,18 +60,18 @@ def identity_block(X, f, filters, initializer=random_uniform):
     # Save the input value. We'll need this later to add back to the main path. 
     X_shortcut = X
     
-    # 1st component of main path: Conv2D -> BN -> ReLU
+    # 1st component of main (to reduce the number of channels) path: Conv2D -> BN -> ReLU
     X = Conv2D(filters = F1, kernel_size = 1, strides = (1,1), padding = 'valid', kernel_initializer = initializer(seed=0))(X)
     # axis: integer, the axis that should be normalized (typically the features axis), here we are normalizing the channels axis
     X = BatchNormalization(axis = 3)(X) 
     X = Activation('relu')(X)
     
-    # 2nd component of main path: Conv2D -> BN -> ReLU
+    # 2nd component of main path (for features extraction): Conv2D -> BN -> ReLU
     X = Conv2D(filters = F2, kernel_size = f, strides = (1,1), padding = 'same', kernel_initializer = initializer(seed=0))(X)
     X = BatchNormalization(axis = 3)(X) 
     X = Activation('relu')(X)
 
-    # 3rd component of main path: Conv2D -> BN
+    # 3rd component of main path (to restore the number of channels to the original number or more): Conv2D -> BN
     X = Conv2D(filters = F3, kernel_size = 1, strides = (1,1), padding = 'valid', kernel_initializer = initializer(seed=0))(X)
     X = BatchNormalization(axis = 3)(X) 
     
@@ -92,7 +93,8 @@ def convolutional_block(X, f, filters, s = 2, initializer=glorot_uniform):
     Implementation of the convolutional block
     Main path: Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm -> ReLU -> Conv2D -> BatchNorm
     Shortcut path: Conv2D -> BatchNorm
-    
+    We use bottleneck residual block structure for efficiency purpose
+
     Arguments:
     X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)
     f -- integer, specifying the shape of the middle Conv's window for the main path
@@ -109,18 +111,18 @@ def convolutional_block(X, f, filters, s = 2, initializer=glorot_uniform):
     # Save the input value
     X_shortcut = X
     
-    # 1st component of main path: Conv2D -> BN -> ReLU
+    # 1st component of main path (to reduce the number of channels): Conv2D -> BN -> ReLU
     X = Conv2D(filters = F1, kernel_size = 1, strides = (s, s), padding='valid', kernel_initializer = initializer(seed=0))(X)
     # axis: integer, the axis that should be normalized (typically the features axis), here we are normalizing the channels axis
     X = BatchNormalization(axis = 3)(X)
     X = Activation('relu')(X) # no hyperparameters
     
-    # 2nd component of main path: Conv2D -> BN -> ReLU
+    # 2nd component of main path (for features extraction): Conv2D -> BN -> ReLU
     X = Conv2D(filters = F2, kernel_size = f, strides = (1,1), padding='same', kernel_initializer = initializer(seed=0))(X)
     X = BatchNormalization(axis = 3)(X)
     X = Activation('relu')(X)   
 
-    # 3rd component of main path: Conv2D -> BN
+    # 3rd component of main path (to restore the number of channels to the original number or more): Conv2D -> BN
     X = Conv2D(filters = F3, kernel_size = 1, strides = (1,1), padding='valid', kernel_initializer = initializer(seed=0))(X)
     X = BatchNormalization(axis = 3)(X)
     
