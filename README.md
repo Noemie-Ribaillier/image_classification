@@ -192,5 +192,105 @@ These are the steps used to build the ResNet50 model:
 We find better results with ResNet50 model (especially the pre-trained one) than with the standard CNN for multiclass classification. It's because the ResNet50 model is deeper (but handle the vanishing gradient) and traiend on more images/epoches.
 
 
+## Binary classification (using transfer learning)
+### Project description
+In this project, we aim at classifying an image into 2 classes: 'alpaca' vs 'not alpaca'. To do so, we will use transfer learning (ie use a model that was pre-trained) and for this specific project we will use the MobileNetV2 model.
+
+### Dataset
+We use a dataset gathering images of alpacas and images of non alpacas (already split into 2 folders). We have 142 pictures of alpacas and 185 pictures of non alpacas (so a total of 327 images). We create the train and validation set by putting 20% of all the images into the validation set. So the train set contains 262 images and the validation set contains 65 images. Not all images have the same shape, that's why they are, later in the script, resized (to all have the same shape) to have a height and a width of 160. Images are in RGB format (so data has 3 channels). 
+
+
+#### Dataset preprocessing
+Training set is pre-processed for this specific model to work correctly. We carry on data augmentation on the train set to increase the training set without increasing the number of images:
+* random left-right flip 
+* random rotation within +/-72 degrees
+
+
+### Transfer Learning
+Transfer learning uses a model, already pretrained on a large dataset (MobileNetV2 in this case, pre-trained on ImageNet dataset) and saved, to customize our own model cheaply and efficiently.
+To adapt the classifier to new data, we delete the top/last layers, add a new classification layers, and train only on that layer. We replace the top layer to adapt the model to the specific classification task (because the pre-trained model already has learned useful feature representations but needs a new head for the specific target classes).
+For this project we do the 3 following modelling:
+* Use the pre-trained MobileNetV2 model as it is (so trained on 1000 classes, not the classes of interest for this project)
+* Use the pre-trained MobileNetV2 model, removing the last/top 2 layers to make the pre-trained MobileNetV2 model efficient on the classes of this project 
+* Fine-tune several late layers to make the model better at classifying our project
+
+
+### More details about the MobileNetV2 model
+MobileNetV2 model has been trained on ImageNet dataset (trained on 1.2 million images and 1000 classes). It provides fast and computationally efficient performance for object detection, image segmentation and image classification. The goal of MobileNetV2 is to balance between maintaning performance and reducing computational cost. It is optimized to run on mobile and other low-power applications. 
+
+The architecture has 4 defining characteristics (gathered in inverted residual blocks):
+* Depthwise separable convolutions: used to reduce the computational load while maintaining accuracy. They separate the convolution process into two steps: depthwise convolutions (which apply filters to each input channel separately) and pointwise convolutions (which combine the depthwise outputs)
+* Linear bottlenecks: they help preserve the information by maintaining low-dimensional representations, which minimize information loss and improve the overall accuracy of the model
+* Shortcut connections between bottleneck layers: when the initial and final feature maps are of the same dimensions (when the depthwise convolution stride equals one and input and output channels are equal), a residual connection is added to aid gradient flow during backpropagation
+* ReLU6 activation function: it clips the ReLU output at 6. This helps prevent numerical instability in low-precision computations making the model more suitable for mobile and embeddded devices used because of its robustness when used with low-precision computation. It is used to prevent extremely large values during the forward pass, especially in situations like mobile devices where limiting large values can help improve performance and reduce resource consumption (like memory and computation). It also helps prevent the exploding gradients problem during training, where gradients become too large, causing instability in learning.
+
+
+#### The depthwise separable convolutions
+They are able to reduce the number of trainable parameters and operations and also speed up (traditional) convolutions in 2 steps: 
+1. The depthwise convolution: it applies a separate filter for each input channel, reducing the computational cost. The filter/kernel is applied on each filter independently
+2. The pointwise convolution: a 1x1 convolution combining the outputs of the previous step into one (combining these feature across channels to capture relationships between them). This gives a single result from a single feature at a time, and then is applied to all the filters in the output layer
+
+Reminder over "normal" convolutions: 
+* The kernel has the same depth has the input matrix (except for special cases such as 3D convolutions in medical field)
+* The output will have the depth equal to the number of filters we choose
+
+Difference between "normal" convolution and depthwise-separable convolution on a specific example (input matrix has shape 12x12x3 and kernel has shape 5x5x3 with 256 filters):
+* "normal" convolution: we slide a filter (kernel) over the input image, performing element-wise multiplication, and summing the results to produce a single output value. For an input shape of 12x12x3 and a kernel shape of 5x5x3, the output size would be reduced to 8x8 because the kernel processes 5x5 regions of the 12x12 input and moves across the image with a stride (let's consider 1 here), applying the filter at each position.
+This makes a total of 5 * 5 * 3 computations (for 1 kernel over 1 "sub-region") * 8 * 8 (for 1 kernel over all sub-regions) * 256 (for all filters), so a total of 1228800 computations
+* depthwise-separable convolution (split in 2 steps):
+    * depthwise convolution: each channel of the kernel is applied on the right channel of the input, giving the output with a split on the input filter. So in our example, it makes 5 * 5 computations (for 1 input channel) * 3 (for 3 input channels) * 8 * 8 (for the whole output matrix, sliding the whole input matrix)
+    * pointwise convolution: we use a 1x1 (3rd dimension is the number of input channel, so here 3) kernel. We slide it over the temporary matrix, performing element-wise multiplication, and summing the results to produce a single output value. For the temporary shape of 8x8x3 and a kernel shape of 1x1x3, the output size becomes 8x8x256 because the kernel moves across the temporary image with a stride of 1 and we use 256 filters, applying the filter at each position. This adds 3 (1x1 convolution for each input channel) * 8 * 8 (each position of the output matrix) * 256 (all filters) computations
+    * combining both steps, we end up with a total of 4800+49152=53952 computations (with depthwise separable convolution for this example)
+So the number of parameters (to train) is very different between the depthwise separable convolution and the "normal" convolution. This separable approach significantly reduces the number of trainable parameters and computations which lowers the computational cost with only a small reduction in accuracy (that's why MobileNetV2 is so efficient).
+
+
+#### The linear bottleneck layer
+Each block consists of an inverted residual structure with a bottleneck at each end. These bottlenecks encode the intermediate inputs and outputs in a low dimensional space, and prevent non-linearities from destroying important information. 
+Indeed, applying ReLU (non-linear transformation) in low-dimensional spaces can result in lost features/information loss. MobileNetV2 use linear bottlenecks to ensure that important features are preserved during the compression and expansion processes, helping the model to remain accurate without adding too much computational cost.
+
+
+#### The shortcut connection
+They are similar to the ones in traditional residual networks, they serve the same purpose of speeding up training and improving predictions. These connections skip over the intermediate convolutions and connect the bottleneck layers. 
+Shortcut connection is used to avoid vanishing gradients by enabling better gradient flow through the network during backpropagation.
+
+
+#### The inverted residual block
+The premise of the inverted residual layer is that: 
+* Feature maps are able to be encoded in low-dimensional subspace 
+* Non-linear activations result in information loss in site of their ability to increase representational complexity. 
+This guide the design of the new convolutional layer.
+
+The layer takes in a low-dimensional tensor and perform 3 separate convolutions:
+1. 1x1 convolution (expansion layer): a point-wise convolution is used to expand the low-dimensional input feature map to a higher-dimensional space suited to non-linear activations, then ReLU6 is applied. The 1x1 convolution increases the number of channels. It is followed by the ReLU6 activation function which introduces non-linearity. It makes the depthwise convolutions more effective.
+2. A depthwise convolution is performed followed by ReLU6 activation, achieving spatial convolution independently over each channel. This layer is also followed by ReLU6. We apply depthwise convolution after the expansion layer because the expanded set of features allows the depthwise convolution to process richer patterns across the expanded channels rather than just the original ones, improving the ability to detect meaningful features in the data.
+3. A 1x1 convolution (projection layer): the partially-filtered feature map is projected back to a low-dimensional subspace using another point-wise convolution. This layer does not use an activation function, hence it is linear.
+
+
+#### Architecture of MobileNetV2
+Architecture of the MobileNetV2 is a follow:
+1. Initial convolution layer: input layer and first convolution layer 
+2. Serie of inverted residual blocks: each inverted residual block has a shortcut connection that skips over the depthwise convolution and connects directly from the input to the output, allowing for better gradient flow during training (this connection only exists when the input and output dimensions match). Each stage has a specific expansion factors, output channels, and strides to manage the computational complexity and receptive field
+3. Convolutional layer: the final 1x1 convolution layer increases the channel dimension followed by a global average pooling layer
+5. Fully connected layer: outputs the class scores for classification tasks (using a softmax when working with muticlass task)
+
+
+### Fine-tuning
+We fine-tune the later layers (can include not only the last layers but also some of the deeper feature extraction layers) of our model to capture high-level details near the end of the network and potentially improve accuracy.
+These are the steps to fine-tune (in transfer learning):
+1. Unfreeze the layers at the end of the network
+2. Re-train our model on the final layers with a very low learning rate. A smaller learning rate allows us to take smaller steps to adapt the model a little more closely to our (new) data and it can lead to more fine details (and higher accuracy). We keep all other (first/previous) layers frozen.
+
+We only fine-tune the later layers because in early layers, the model trains on low-level features (like edges), which is similar to many cases (similar features over images/cases). In later layers the model trains on more-complex and high-level features (like wispy hair or pointy ears). With new data (different than what the model got pre-trained on), we want the high-level features to adapt to it.
+
+
+### Script description, step by step
+* We load the packages needed for this project and we set up the right directory
+* We create the training and validation datasets (from a directory)
+* We preprocess and we augment data (using the Sequential API)
+* We use a pretrained model (MobileNetV2) before realizing alpacas/not alpacas are not part of the model classes (so the model as it is is not performing)
+* We adapt a pretrained model (MobileNetV2) to new data and train a classifier using the Functional API (weights being frozen) but the performance/accuracy is not that good
+* We fine-tune a classifier's final layers to improve accuracy (from a pre-trained model). We unfreeze the weights at the rather end of the model to make them trainable on our data and get better performances
+
+
 ## References
 This script is coming from the Deep Learning Specialization course. I enriched it to this new version.
